@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { ObjectId } from 'mongodb';
-
 import User from '../models/user'
-import { Types } from 'mongoose';
+import { IRequest } from 'app';
+
 
 export const getUsers = (req: Request, res: Response) => {
     return User.find({})
@@ -18,11 +17,11 @@ export const createUser = (req: Request, res: Response) => {
         .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
 }
 
-export const getUser = async (req: Request, res: Response) => {
+export const getUser = (req: Request, res: Response) => {
     const { _id } = req.params;
-    return User.find({ _id: new ObjectId(_id) })
+    return User.findById(_id)
       .then((user) => {
-        if (!user.length) {
+        if (!user) {
           res
             .status(404)
             .send({ message: "пользователь не найден" });
@@ -32,3 +31,30 @@ export const getUser = async (req: Request, res: Response) => {
       })
       .catch((err) => console.log(err));
 }
+export const updateUserData = (req: IRequest, res: Response) => {
+    const { name, about} = req.body
+
+    return User.findByIdAndUpdate(req.user?._id, { name, about })
+    .then((user) => {
+      if (!user) {
+        res.status(404).send({message: "Пользователь не найден"})
+      } else {
+        res.send({data: user})
+      }
+    })
+    .catch((err) => console.log(err));
+};
+
+export const updateUserAvatar = (req: IRequest, res: Response) => {
+  const { avatar } = req.body
+
+  return User.findByIdAndUpdate(req.user?._id, { avatar })
+  .then((user) => {
+    if (!user) {
+      res.status(404).send({message: "Пользователь не найден"})
+    } else {
+      res.send({data: user})
+    }
+  })
+  .catch((err) => console.log(err));
+};

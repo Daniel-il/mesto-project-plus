@@ -23,10 +23,7 @@ const cardSchema = new Schema<ICard>({
         required: true,
         
     },
-    likes: {
-        default: [],
-        
-    }
+    likes: []
 
 })
-export default model<ICard>('user', cardSchema); 
+export default model<ICard>('card', cardSchema); 
