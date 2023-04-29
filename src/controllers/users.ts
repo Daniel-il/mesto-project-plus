@@ -1,60 +1,68 @@
 import { Request, Response } from 'express';
-import User from '../models/user'
-import { IRequest } from 'app';
+import { IRequest } from '../app';
+import {
+  errorMessage404,
+  responseDataNotFoundCode,
+  responseInternalServerErrorCode,
+  errorMessage500,
+  errorMessagePlural404,
+} from '../routes/constants';
 
+import User from '../models/user';
 
-export const getUsers = (req: Request, res: Response) => {
-    return User.find({})
-        .then(users => res.send({ data: users }))
-        .catch(() => res.status(500).send({ message: 'Произошла ошибка' }))
-}
+export const getUsers = (req: Request, res: Response) => User.find({})
+  .then((users) => {
+    if (!users) {
+      return res.status(responseDataNotFoundCode).send({ message: errorMessagePlural404 });
+    }
+    return res.send({ data: users });
+  })
+  .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
 
 export const createUser = (req: Request, res: Response) => {
-    const { name, about, avatar } = req.body;
+  const { name, about, avatar } = req.body;
 
-    return User.create({ name, about, avatar })
-        .then(user => res.send({ data: user }))
-        .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
-}
+  return User.create({ name, about, avatar })
+    .then((user) => res.send({ data: user }))
+    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+};
 
 export const getUser = (req: Request, res: Response) => {
-    const { _id } = req.params;
-    return User.findById(_id)
-      .then((user) => {
-        if (!user) {
-          res
-            .status(404)
-            .send({ message: "пользователь не найден" });
-        } else {
-          res.send({ data: user });
-        }
-      })
-      .catch((err) => console.log(err));
-}
-export const updateUserData = (req: IRequest, res: Response) => {
-    const { name, about} = req.body
-
-    return User.findByIdAndUpdate(req.user?._id, { name, about })
+  const { _id } = req.params;
+  return User.findById(_id)
     .then((user) => {
       if (!user) {
-        res.status(404).send({message: "Пользователь не найден"})
+        res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
       } else {
-        res.send({data: user})
+        res.send({ data: user });
       }
     })
-    .catch((err) => console.log(err));
+    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+};
+export const updateUserData = (req: IRequest, res: Response) => {
+  const { name, about } = req.body;
+
+  return User.findByIdAndUpdate(req.user?._id, { name, about })
+    .then((user) => {
+      if (!user) {
+        res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
+      } else {
+        res.send({ data: user });
+      }
+    })
+    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
 };
 
 export const updateUserAvatar = (req: IRequest, res: Response) => {
-  const { avatar } = req.body
+  const { avatar } = req.body;
 
   return User.findByIdAndUpdate(req.user?._id, { avatar })
-  .then((user) => {
-    if (!user) {
-      res.status(404).send({message: "Пользователь не найден"})
-    } else {
-      res.send({data: user})
-    }
-  })
-  .catch((err) => console.log(err));
+    .then((user) => {
+      if (!user) {
+        res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
+      } else {
+        res.send({ data: user });
+      }
+    })
+    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
 };
