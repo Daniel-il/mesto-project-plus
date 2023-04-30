@@ -5,55 +5,59 @@ import {
   responseDataNotFoundCode,
   responseInternalServerErrorCode,
   errorMessage500,
-  errorMessagePlural404,
+  responseIncorrectDataCode,
+  errorMessage400,
 } from '../routes/constants';
 import Card from '../models/card';
 
 export const getCards = (req: Request, res: Response) => Card.find({})
-  .populate('user')
-  .then((cards) => {
-    if (!cards) {
-      return res.status(responseDataNotFoundCode).send({ message: errorMessagePlural404 });
-    }
-    return res.send({ data: cards });
-  })
+  .populate('owner', 'name about avatar')
+  .populate('likes', 'name about avatar')
+  .then((cards) => res.send({ data: cards }))
   .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
 
 export const createCard = (req: IRequest, res: Response) => {
   const { name, link } = req.body;
   return Card.create({ name, link, owner: req.user?._id })
-    .then((card) => {
-      if (!card) {
-        return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
-      }
-      return res.send({ data: card });
-    })
-    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+    .then((card) => res.send({ data: card }))
+    .catch(() => (err: Error) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+    });
 };
 
 export const deleteCard = (req: IRequest, res: Response) => {
   const { cardId } = req.params;
-  return Card.findByIdAndDelete(cardId).then((card) => {
-    if (!card) {
-      return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
-    }
-    return res.send({ message: 'Карточка успешно удалена' });
-  });
+  return Card.findByIdAndDelete(cardId)
+    .then((card) => {
+      if (!card) {
+        return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
+      }
+      return res.send({ message: 'Карточка успешно удалена' });
+    })
+    .catch(() => (err: Error) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+    });
 };
 export const likeCard = (req: IRequest, res: Response) => Card.findByIdAndUpdate(
   req.params.cardId,
   { $addToSet: { likes: req.user?._id } }, // добавить _id в массив, если его там нет
   { new: true },
 )
-  .populate('user')
+  .populate('likes', 'name about avatar')
   .then((card) => {
     if (!card) {
       return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
     }
     return res.send({ data: card });
   })
-  .catch(() => {
-    res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+  .catch(() => (err: Error) => {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+    } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
   });
 
 export const dislikeCard = (req: IRequest, res: Response) => Card.findByIdAndUpdate(
@@ -67,6 +71,8 @@ export const dislikeCard = (req: IRequest, res: Response) => Card.findByIdAndUpd
     }
     return res.send({ data: card });
   })
-  .catch(() => {
-    res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+  .catch(() => (err: Error) => {
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+    } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
   });
