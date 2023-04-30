@@ -5,18 +5,14 @@ import {
   responseDataNotFoundCode,
   responseInternalServerErrorCode,
   errorMessage500,
-  errorMessagePlural404,
+  errorMessage400,
+  responseIncorrectDataCode,
 } from '../routes/constants';
 
 import User from '../models/user';
 
 export const getUsers = (req: Request, res: Response) => User.find({})
-  .then((users) => {
-    if (!users) {
-      return res.status(responseDataNotFoundCode).send({ message: errorMessagePlural404 });
-    }
-    return res.send({ data: users });
-  })
+  .then((users) => res.send({ data: users }))
   .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
 
 export const createUser = (req: Request, res: Response) => {
@@ -37,7 +33,11 @@ export const getUser = (req: Request, res: Response) => {
         res.send({ data: user });
       }
     })
-    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+    .catch(() => (err: Error) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+    });
 };
 export const updateUserData = (req: IRequest, res: Response) => {
   const { name, about } = req.body;
@@ -50,7 +50,11 @@ export const updateUserData = (req: IRequest, res: Response) => {
         res.send({ data: user });
       }
     })
-    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+    .catch(() => (err: Error) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+    });
 };
 
 export const updateUserAvatar = (req: IRequest, res: Response) => {
@@ -64,5 +68,9 @@ export const updateUserAvatar = (req: IRequest, res: Response) => {
         res.send({ data: user });
       }
     })
-    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+    .catch(() => (err: Error) => {
+      if (err.name === 'ValidationError' || err.name === 'CastError') {
+        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
+      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+    });
 };

@@ -1,6 +1,7 @@
 /* eslint-disable import/no-cycle */
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { responseDataNotFoundCode } from './routes/constants';
 import usersRouter from './routes/users';
 import cardsRouter from './routes/cards';
 
@@ -22,7 +23,12 @@ app.use((req: IRequest, res: Response, next) => {
 });
 app.use('/cards', cardsRouter);
 app.use('/users', usersRouter);
-
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res
+    .status(responseDataNotFoundCode)
+    .send({ message: 'Такого маршрута не существует' });
+  next();
+});
 app.listen(PORT, () => {
   // Если всё работает, консоль покажет, какой порт приложение слушает
   console.log(`App listening on port ${PORT}`);
