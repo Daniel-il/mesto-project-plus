@@ -7,7 +7,7 @@ import {
   errorMessage500,
   errorMessage400,
   responseIncorrectDataCode,
-} from '../routes/constants';
+} from '../utils/constants';
 
 import User from '../models/user';
 
@@ -20,7 +20,13 @@ export const createUser = (req: Request, res: Response) => {
 
   return User.create({ name, about, avatar })
     .then((user) => res.send({ data: user }))
-    .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(400).send({ message: errorMessage400 });
+      }
+
+      return res.status(500).send({ message: errorMessage500 });
+    });
 };
 
 export const getUser = (req: Request, res: Response) => {
@@ -34,7 +40,7 @@ export const getUser = (req: Request, res: Response) => {
       }
     })
     .catch(() => (err: Error) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'CastError') {
         res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
       } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
     });
@@ -51,7 +57,7 @@ export const updateUserData = (req: IRequest, res: Response) => {
       }
     })
     .catch(() => (err: Error) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
         res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
       } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
     });
@@ -69,7 +75,7 @@ export const updateUserAvatar = (req: IRequest, res: Response) => {
       }
     })
     .catch(() => (err: Error) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
         res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
       } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
     });

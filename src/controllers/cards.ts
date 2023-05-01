@@ -7,7 +7,7 @@ import {
   errorMessage500,
   responseIncorrectDataCode,
   errorMessage400,
-} from '../routes/constants';
+} from '../utils/constants';
 import Card from '../models/card';
 
 export const getCards = (req: Request, res: Response) => Card.find({})
@@ -21,9 +21,11 @@ export const createCard = (req: IRequest, res: Response) => {
   return Card.create({ name, link, owner: req.user?._id })
     .then((card) => res.send({ data: card }))
     .catch(() => (err: Error) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
-      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+      if (err.name === 'ValidationError') {
+        return res.status(400).send({ message: errorMessage400 });
+      }
+
+      return res.status(500).send({ message: errorMessage500 });
     });
 };
 
@@ -37,7 +39,7 @@ export const deleteCard = (req: IRequest, res: Response) => {
       return res.send({ message: 'Карточка успешно удалена' });
     })
     .catch(() => (err: Error) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
+      if (err.name === 'CastError') {
         res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
       } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
     });
@@ -55,7 +57,7 @@ export const likeCard = (req: IRequest, res: Response) => Card.findByIdAndUpdate
     return res.send({ data: card });
   })
   .catch(() => (err: Error) => {
-    if (err.name === 'ValidationError' || err.name === 'CastError') {
+    if (err.name === 'CastError') {
       res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
     } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
   });
@@ -72,7 +74,7 @@ export const dislikeCard = (req: IRequest, res: Response) => Card.findByIdAndUpd
     return res.send({ data: card });
   })
   .catch(() => (err: Error) => {
-    if (err.name === 'ValidationError' || err.name === 'CastError') {
+    if (err.name === 'CastError') {
       res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
     } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
   });

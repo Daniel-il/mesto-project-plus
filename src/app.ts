@@ -1,7 +1,7 @@
 /* eslint-disable import/no-cycle */
 import express, { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { responseDataNotFoundCode } from './routes/constants';
+import { responseDataNotFoundCode } from './utils/constants';
 import usersRouter from './routes/users';
 import cardsRouter from './routes/cards';
 
