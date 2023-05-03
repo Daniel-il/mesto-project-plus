@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { responseDataNotFoundCode } from './utils/constants';
 import usersRouter from './routes/users';
 import cardsRouter from './routes/cards';
+import { createUser, login } from './controllers/users';
 
 const { PORT = 3000 } = process.env;
 export interface IRequest extends Request {
@@ -21,6 +22,8 @@ app.use((req: IRequest, res: Response, next) => {
 
   next();
 });
+app.post('/signin', login);
+app.post('/signup', createUser);
 app.use('/cards', cardsRouter);
 app.use('/users', usersRouter);
 app.use((req: Request, res: Response, next: NextFunction) => {

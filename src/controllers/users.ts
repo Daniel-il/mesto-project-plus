@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { IRequest } from '../app';
 import {
   errorMessage404,
@@ -7,6 +9,10 @@ import {
   errorMessage500,
   errorMessage400,
   responseIncorrectDataCode,
+  responseDataCreated,
+  secretKey,
+  responseUnauthorizedDataCode,
+  errorMessage401,
 } from '../utils/constants';
 
 import User from '../models/user';
@@ -16,16 +22,25 @@ export const getUsers = (req: Request, res: Response) => User.find({})
   .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
 
 export const createUser = (req: Request, res: Response) => {
-  const { name, about, avatar } = req.body;
-
-  return User.create({ name, about, avatar })
-    .then((user) => res.send({ data: user }))
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  return bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
+    .then((user) => res.status(responseDataCreated).send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: errorMessage400 });
+        return res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
       }
 
-      return res.status(500).send({ message: errorMessage500 });
+      return res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
     });
 };
 
@@ -78,5 +93,20 @@ export const updateUserAvatar = (req: IRequest, res: Response) => {
       if (err.name === 'ValidationError') {
         res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
       } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+    });
+};
+
+export const login = (req: IRequest, res: Response) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => res.send({
+      token: jwt.sign({ _id: user._id }, secretKey, { expiresIn: '7d' }),
+    }))
+    .catch((error) => {
+      if (error.message === 'UnauthorizedError') {
+        return res.status(responseUnauthorizedDataCode).send({ message: errorMessage401 });
+      }
+      return res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
     });
 };
