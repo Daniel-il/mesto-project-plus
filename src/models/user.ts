@@ -45,6 +45,7 @@ const userSchema = new Schema<IUser>({
   password: {
     type: String,
     required: true,
+    select: false,
   },
 });
 userSchema.static('findUserByCredentials', function findUserByCredentials(email: string, password: string) {

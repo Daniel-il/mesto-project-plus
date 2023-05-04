@@ -11,4 +11,4 @@ export const errorMessage404 = 'Пользователь или карточка
 export const errorMessagePlural404 = 'Пользователи или карточки не найдены';
 export const errorMessage500 = 'Ошибка по умолчанию.';
 
-export const secretKey = 'some-secret-key';
+export const secretKey = 'super-strong-secret';
