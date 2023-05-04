@@ -1,80 +1,94 @@
-import { Request, Response } from 'express';
-import { IRequest } from '../app';
+import { NextFunction, Request, Response } from 'express';
+import ForbiddenError from '../erorrs/err-forbidden';
+import { IRequest } from '../utils/types';
 import {
   errorMessage404,
-  responseDataNotFoundCode,
-  responseInternalServerErrorCode,
-  errorMessage500,
-  responseIncorrectDataCode,
   errorMessage400,
+  errorMessage403,
 } from '../utils/constants';
 import Card from '../models/card';
+import BadRequest from '../erorrs/err-bad-request';
+import DataNotFoundError from '../erorrs/err-not-found';
 
-export const getCards = (req: Request, res: Response) => Card.find({})
+export const getCards = (req: Request, res: Response, next: NextFunction) => Card.find({})
   .populate('owner', 'name about avatar')
   .populate('likes', 'name about avatar')
   .then((cards) => res.send({ data: cards }))
-  .catch(() => res.status(responseInternalServerErrorCode).send({ message: errorMessage500 }));
+  .catch((err) => next(err));
 
-export const createCard = (req: IRequest, res: Response) => {
+export const createCard = (req: IRequest, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
-  return Card.create({ name, link, owner: req.user?._id })
+  return Card.create({
+    name, link, owner: req.user?._id, runValidators: true,
+  })
     .then((card) => res.send({ data: card }))
-    .catch(() => (err: Error) => {
+    .catch((err: Error) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: errorMessage400 });
+        return next(new BadRequest(errorMessage400));
       }
 
-      return res.status(500).send({ message: errorMessage500 });
+      return next(err);
     });
 };
 
-export const deleteCard = (req: IRequest, res: Response) => {
+export const deleteCard = (req: IRequest, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
-  return Card.findByIdAndDelete(cardId)
+  const userId = req.user?._id;
+
+  Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
+        throw new DataNotFoundError(errorMessage404);
       }
-      return res.send({ message: 'Карточка успешно удалена' });
+      if (card.owner.toString() !== userId) {
+        throw new ForbiddenError(errorMessage403);
+      }
+      return Card.findByIdAndDelete(cardId)
+        .then(() => res.send({ message: 'Карточка успешно удалена' }));
     })
-    .catch(() => (err: Error) => {
+    .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
-      } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
+        return next(new BadRequest(errorMessage400));
+      }
+      return next(err);
     });
 };
-export const likeCard = (req: IRequest, res: Response) => Card.findByIdAndUpdate(
-  req.params.cardId,
-  { $addToSet: { likes: req.user?._id } }, // добавить _id в массив, если его там нет
-  { new: true },
-)
-  .populate('likes', 'name about avatar')
-  .then((card) => {
-    if (!card) {
-      return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
-    }
-    return res.send({ data: card });
-  })
-  .catch(() => (err: Error) => {
-    if (err.name === 'CastError') {
-      res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
-    } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
-  });
-
-export const dislikeCard = (req: IRequest, res: Response) => Card.findByIdAndUpdate(
-  req.params.cardId,
-  { $pull: { likes: req.user?._id } }, // убрать _id из массива
-  { new: true },
-)
-  .then((card) => {
-    if (!card) {
-      return res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
-    }
-    return res.send({ data: card });
-  })
-  .catch(() => (err: Error) => {
-    if (err.name === 'CastError') {
-      res.status(responseIncorrectDataCode).send({ message: errorMessage400 });
-    } else res.status(responseInternalServerErrorCode).send({ message: errorMessage500 });
-  });
+export const likeCard = (req: IRequest, res: Response, next: NextFunction) => {
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $addToSet: { likes: req.user?._id } }, // добавить _id в массив, если его там нет
+    { new: true },
+  )
+    .populate('likes', 'name about avatar')
+    .then((card) => {
+      if (!card) {
+        throw new DataNotFoundError(errorMessage404);
+      }
+      return res.send({ data: card });
+    })
+    .catch((err: Error) => {
+      if (err.name === 'CastError') {
+        return next(new BadRequest(errorMessage400));
+      }
+      return next(err);
+    });
+};
+export const dislikeCard = (req: IRequest, res: Response, next: NextFunction) => {
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user?._id } }, // убрать _id из массива
+    { new: true },
+  )
+    .then((card) => {
+      if (!card) {
+        throw new DataNotFoundError(errorMessage404);
+      }
+      return res.send({ data: card });
+    })
+    .catch((err: Error) => {
+      if (err.name === 'CastError') {
+        return next(new BadRequest(errorMessage400));
+      }
+      return next(err);
+    });
+};
