@@ -8,6 +8,7 @@ import cardsRouter from './routes/cards';
 import { createUser, login } from './controllers/users';
 import auth from './middlewares/auth';
 import { requestLogger, errorLogger } from './middlewares/logger';
+import { validateLogin, validateUserCreation } from './utils/validation';
 
 const { PORT = 3000 } = process.env;
 
@@ -18,8 +19,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(requestLogger);
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', validateLogin, login);
+app.post('/signup', validateUserCreation, createUser);
 app.use(auth);
 app.use('/cards', cardsRouter);
 app.use('/users', usersRouter);

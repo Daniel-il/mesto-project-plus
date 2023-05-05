@@ -3,6 +3,8 @@ import {
 } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
+import UnauthorizedError from '../erorrs/err-unauthorized';
+import { errorMessage401 } from '../utils/constants';
 
 export interface IUser {
   name: string;
@@ -56,13 +58,13 @@ userSchema.static('findUserByCredentials', function findUserByCredentials(email:
   return this.findOne({ email }).select('+password')
     .then((user: IUser) => {
       if (!user) {
-        return Promise.reject(new Error('UnauthorizedError'));
+        return Promise.reject(new UnauthorizedError(errorMessage401));
       }
 
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return Promise.reject(new Error('UnauthorizedError'));
+            return Promise.reject(new UnauthorizedError(errorMessage401));
           }
 
           return user;

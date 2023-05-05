@@ -8,7 +8,6 @@ import User from '../models/user';
 import ConflictError from '../erorrs/err-conflict';
 import {
   errorMessage404,
-  responseDataNotFoundCode,
   errorMessage400,
   responseDataCreated,
   secretKey,
@@ -31,7 +30,12 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
       email,
       password: hash,
     }))
-    .then((user) => res.status(responseDataCreated).send({ data: user }))
+    .then((user) => res.status(responseDataCreated).send({
+      email: user.email,
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+    }))
     .catch((err: IError) => {
       if (err.code === 11000) {
         return next(new ConflictError('Пользователь с такой почтой уже существует'));
@@ -53,7 +57,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
         res.send({ data: user });
       }
     })
-    .catch(() => (err: Error) => {
+    .catch((err: Error) => {
       if (err.name === 'CastError') {
         return next(new BadRequest(errorMessage400));
       }
@@ -100,7 +104,7 @@ export const updateUserAvatar = (req: IRequest, res: Response, next: NextFunctio
   })
     .then((user) => {
       if (!user) {
-        res.status(responseDataNotFoundCode).send({ message: errorMessage404 });
+        throw new DataNotFoundError(errorMessage404);
       } else {
         res.send({ data: user });
       }
