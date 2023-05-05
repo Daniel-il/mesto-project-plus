@@ -20,20 +20,20 @@ export const validateLogin = celebrate({
 
 export const validateUpdateUserAvatar = celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().pattern(linkRegex),
+    avatar: Joi.string().required().pattern(linkRegex),
   }),
 });
 
 export const validateUpdateUserData = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
+    name: Joi.string().required().min(2).max(30),
+    about: Joi.string().required().min(2).max(30),
   }),
 });
 
 export const validateCreateCard = celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    link: Joi.string().pattern(linkRegex),
+    name: Joi.string().required().min(2).max(30),
+    link: Joi.string().required().pattern(linkRegex),
   }),
 });
